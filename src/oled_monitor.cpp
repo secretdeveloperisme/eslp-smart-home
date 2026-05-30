@@ -1,0 +1,55 @@
+#ifndef OLED_MONITOR_CPP
+#define OLED_MONITOR_CPP
+#include "oled_monitor.h"
+#include "icons.h"
+
+void OLEDMonitor::drawCenteredStr(int y, const char *str){
+  int stringWidth = this->u8g2_monitor->getStrWidth(str);
+  int x = (128 - stringWidth) / 2;
+  this->u8g2_monitor->drawStr(x, y, str);
+}
+
+void OLEDMonitor::printInfoToDisplay(String now, float temperature, float humidity, float heatIndex){
+  this->u8g2_monitor->clearBuffer();
+  this->u8g2_monitor->drawFrame(0, 0, 128, 64);
+  this->u8g2_monitor->setFont(u8g2_font_6x10_tf);
+  String nowOutput = "Now: " + now;
+  drawCenteredStr(10, now.c_str());
+  String temperatureOutput = "Temper: " + String(temperature) + " °C";
+  drawCenteredStr(10 +  this->u8g2_monitor->getMaxCharHeight() + 2, temperatureOutput.c_str());
+  String humidityOutput = "Humidity: " + String(humidity) + "%";
+   drawCenteredStr(10 + this->u8g2_monitor->getMaxCharHeight()*2 + 2, humidityOutput.c_str());
+  String heatIndexOutput = "Heat index: " + String(heatIndex);
+  drawCenteredStr(10 + this->u8g2_monitor->getMaxCharHeight()*3 + 2, heatIndexOutput.c_str());
+  this->u8g2_monitor->sendBuffer();
+}
+
+
+void OLEDMonitor::printInfoToDisplay(String date, String time, float temperature, float humidity){
+  this->u8g2_monitor->clearBuffer();
+  this->u8g2_monitor->setCursor(2, 4);
+  this->u8g2_monitor->drawBitmap(0, 0, 3, 24, WATCH_ICON);
+  this->u8g2_monitor->setFont(u8g2_font_9x18_mn);
+  drawCenteredStr(12, time.c_str());
+  this->u8g2_monitor->setFont(u8g2_font_6x10_tf);
+  drawCenteredStr(24, date.c_str());
+
+  this->u8g2_monitor->drawLine(0, 32, 128, 32);
+  this->u8g2_monitor->drawBitmap(0, 38, 3, 24, THERMORMETER_ICON);
+  this->u8g2_monitor->drawBitmap(64, 38, 3, 24, HUMIDITY_ICON);
+  this->u8g2_monitor->setCursor(24, 52);
+  this->u8g2_monitor->setFont(u8g2_font_6x10_tf);
+  this->u8g2_monitor->print(temperature);
+  this->u8g2_monitor->setCursor(92, 52);
+  this->u8g2_monitor->print(humidity);
+  this->u8g2_monitor->sendBuffer();
+}
+
+
+
+
+bool OLEDMonitor::begin(){
+  return this->u8g2_monitor->begin();
+}
+
+#endif
