@@ -1,86 +1,81 @@
 #include <Arduino.h>
 #include <Wire.h>
-#include "rtc_sensor.h"
-#include "oled_monitor.h"
-#include "th_sensor.h"
+#include "hardware_controller.h"
+#include "espl_network.h"
+#include "espl_web_server.h"
+#include "system_service.h"
 
 #define SERIAL_BAUD 115200
-#define DHT_PIN 26
 
-OLEDMonitor oled_monitor;
-RTCSensor rtc_sensor;
-THSensor th_sensor(DHT_PIN);
+HardwareController hardware_controller;
+EsplConfig espl_config;
+EsplNetwork espl_network(espl_config);
+SystemService system_service(hardware_controller);
+EsplWebServer espl_web_server(espl_config, espl_network, system_service);
 
-/**
- * Print DateTime in ISO 8601 format
- */
-String createDateTimeISO8601Str(const DateTime &dt) {
-  String iso8601DateTime = "";
-  iso8601DateTime += dt.year();
-  iso8601DateTime += 'T';
-  if (dt.hour() < 10) iso8601DateTime += '0';
-  iso8601DateTime += dt.hour();
-  iso8601DateTime += ':';
-  if (dt.minute() < 10) iso8601DateTime += '0';
-  iso8601DateTime += dt.minute();
-  iso8601DateTime += ':';
-  if (dt.second() < 10) iso8601DateTime += '0';
-  iso8601DateTime += dt.second();
-  iso8601DateTime += 'Z';
-  return iso8601DateTime;
-}
-
+uint64_t dateTimeIntervalTimer = 0;
+uint64_t thDataIntervalTimer = 0;
 
 void setup() {
   // Initialize Serial communication
   Serial.begin(SERIAL_BAUD);
   delay(2000);
+  espl_config.setDateTimeCollectionInterval(1000);
+  espl_config.setTHDataCollectionInterval(5000); 
   
   Serial.println("\n\n========================================================");
-  Serial.println("                      Linh Smart House                      ");
+  Serial.println("                      ESLP Smart Home                      ");
   Serial.println("==========================================================\n");
 
-  // Initialize OLED SSD1306
-  if (!oled_monitor.begin()) {
-    Serial.println(F("SSD1306 allocation failed"));
-    for (;;)
-      delay(1000);
-  }
-
-  Serial.println("Initalized OLED SSD1306 successfully");
-  
-  // Initialize RTC DS1307
-  if (!rtc_sensor.begin()) {
-    Serial.println("ERROR: RTC not found!");
-    Serial.println("Please check your connections:");
-    while (1) {
-      delay(1000);
+  // Initialize hardware components
+  InitializingHardwareResult hardwareInitResult = hardware_controller.begin();
+  if (hardwareInitResult.getStatus() == ResultStatus::FAILURE) {
+    Serial.println("Failed to initialize hardware: " + hardwareInitResult.getMessage());
+    while (true) {
+      // Infinite loop to halt execution if hardware initialization fails
     }
   }
-  Serial.println("Initalized RTC DS1307 successfully");
-  // Initalize DHT22
-  th_sensor.begin();
+  hardware_controller.getOLEDMonitor().printConnectingToWiFiScreen();
+  Serial.println("Hardware initialized successfully!");
+  if(espl_network.begin()){
+    hardware_controller.getOLEDMonitor().printConnectedToWiFiScreen();
+    delay(2000);
+    hardware_controller.getOLEDMonitor().printIPAddressToDisplay(espl_network.getLocalIP());
+    delay(2000);
 
-  Serial.println("Initalized DHT22 successfully");
-  
-  Serial.println("ESP32 Smart House initialized successfully!\n");
+    // Initialize Web Server
+    espl_web_server.begin();
+    Serial.println("Web server started successfully");
+  }
+
+  Serial.println("ESLP Smart Home initialized successfully!\n");
   
   Serial.println("\n======================================");
   Serial.println("Setup complete! Starting main loop...");
   Serial.println("======================================\n");
 }
 
+String rtcDate = "YYYY-MM-DD";
+String rtcTime = "HH:MM:SS";
+float temperature = NAN, humidity = NAN;
+
 void loop() {
   // Get current date and time
+  if(dateTimeIntervalTimer == espl_config.getDateTimeCollectionInterval() || dateTimeIntervalTimer == 0){
+    rtcDate = hardware_controller.getRTCSensor().getDateStr();
+    rtcTime = hardware_controller.getRTCSensor().getTimeStr();
+    dateTimeIntervalTimer = 0;
+  }
 
-  String dateTimeStr = rtc_sensor.getDateTimeStr();
-  String date = rtc_sensor.getDateStr();
-  String time = rtc_sensor.getTimeStr();
-  float temperature = th_sensor.getTemperature();
-  float humidity = th_sensor.getHumidity();
-  float heatIndex = th_sensor.calculateHeatIndex(temperature, humidity);
+  if(thDataIntervalTimer == espl_config.getTHDataCollectionInterval() || thDataIntervalTimer == 0){
+    temperature = hardware_controller.getTHSensor().getTemperature();
+    humidity = hardware_controller.getTHSensor().getHumidity();
+    thDataIntervalTimer = 0;
+  }
+  hardware_controller.getOLEDMonitor().printInfoToDisplay(rtcDate, rtcTime, temperature, humidity);
 
-  oled_monitor.printInfoToDisplay(date, time, temperature, humidity);
+  dateTimeIntervalTimer += 1000;
+  thDataIntervalTimer += 1000;
   delay(1000);
 }
 

@@ -17,6 +17,7 @@ class RTCSensor{
     String getDateStr();
     String getTimeStr();
     String getDateTimeStr();
+    String getUTCDateTimeStr();
     ~RTCSensor(){
       delete rtc;
     }

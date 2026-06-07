@@ -11,6 +11,9 @@ class OLEDMonitor{
     };
     bool begin();
     void drawCenteredStr(int y, const char *str);
+    void printConnectingToWiFiScreen();
+    void printConnectedToWiFiScreen();
+    void printIPAddressToDisplay(String ipAddress);
     void printInfoToDisplay(String now, float temperature, float humidity, float heatIndex);
     void printInfoToDisplay(String date, String time, float temperature, float humidity);
     ~OLEDMonitor(){

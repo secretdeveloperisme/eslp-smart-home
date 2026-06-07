@@ -12,6 +12,7 @@ class THSensor{
     void begin();
     float getTemperature();
     float getHumidity();
+    bool getStatus();
     float calculateHeatIndex(float temperature, float humidity);
     ~THSensor(){
       delete dht22;

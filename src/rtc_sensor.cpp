@@ -57,6 +57,31 @@ String RTCSensor::getDateTimeStr(){
   return dateTimeOutput;
 }
 
+String RTCSensor::getUTCDateTimeStr()
+{
+  DateTime dt = this->rtc->now();
+  String iso8601DateTime = "";
+  iso8601DateTime += dt.year();
+  iso8601DateTime += '-';
+  if (dt.month() < 10) iso8601DateTime += '0';
+  iso8601DateTime += dt.month();
+  iso8601DateTime += '-';
+  if (dt.day() < 10) iso8601DateTime += '0';
+  iso8601DateTime += dt.day();
+  iso8601DateTime += 'T';
+  if (dt.hour() < 10) iso8601DateTime += '0';
+  iso8601DateTime += dt.hour();
+  iso8601DateTime += ':';
+  if (dt.minute() < 10) iso8601DateTime += '0';
+  iso8601DateTime += dt.minute();
+  iso8601DateTime += ':';
+  if (dt.second() < 10) iso8601DateTime += '0';
+  iso8601DateTime += dt.second();
+  iso8601DateTime += 'Z';
+  return iso8601DateTime;
+  
+}
+
 String RTCSensor::getDayOfWeek(uint8_t day) {
   const char* daysOfWeek[] = {
     "Monday", "Tuesday", "Wednesday", "Thursday",

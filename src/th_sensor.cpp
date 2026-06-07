@@ -11,9 +11,13 @@ float THSensor::getTemperature(){
 float THSensor::getHumidity(){
   return this->dht22->readHumidity();
 }
-float THSensor::calculateHeatIndex(float temperature, float humidity){
-  return this->dht22->computeHeatIndex(temperature, humidity, false);
+bool THSensor::getStatus()
+{
+  return !isnan(this->getTemperature()) && !isnan(this->getHumidity());
 }
-
+float THSensor::calculateHeatIndex(float temperature, float humidity)
+{
+    return this->dht22->computeHeatIndex(temperature, humidity, false);
+}
 
 #endif

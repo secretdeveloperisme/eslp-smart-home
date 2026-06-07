@@ -9,6 +9,36 @@ void OLEDMonitor::drawCenteredStr(int y, const char *str){
   this->u8g2_monitor->drawStr(x, y, str);
 }
 
+void OLEDMonitor::printConnectingToWiFiScreen()
+{
+  this->u8g2_monitor->clearBuffer();
+  this->u8g2_monitor->drawFrame(0, 0, 128, 64);
+  this->u8g2_monitor->drawBitmap(52, 2, 3, 24, WIFI_ICON);
+  this->u8g2_monitor->setFont(u8g2_font_6x10_tf);
+  this->drawCenteredStr(34, "Connecting to wifi...");
+  this->u8g2_monitor->sendBuffer();
+}
+
+void OLEDMonitor::printConnectedToWiFiScreen()
+{
+  this->u8g2_monitor->clearBuffer();
+  this->u8g2_monitor->drawFrame(0, 0, 128, 64);
+  this->u8g2_monitor->drawBitmap(52, 2, 3, 24, WIFI_ICON);
+  this->u8g2_monitor->setFont(u8g2_font_6x10_tf);
+  this->drawCenteredStr(34, "Wifi Connected!");
+  this->u8g2_monitor->sendBuffer();
+}
+
+void OLEDMonitor::printIPAddressToDisplay(String ipAddress)
+{
+  this->u8g2_monitor->clearBuffer();
+  this->u8g2_monitor->drawFrame(0, 0, 128, 64);
+  this->u8g2_monitor->setFont(u8g2_font_6x10_tf);
+  this->drawCenteredStr(10, "IP Address:");
+  this->drawCenteredStr(30, ipAddress.c_str());
+  this->u8g2_monitor->sendBuffer();
+}
+
 void OLEDMonitor::printInfoToDisplay(String now, float temperature, float humidity, float heatIndex){
   this->u8g2_monitor->clearBuffer();
   this->u8g2_monitor->drawFrame(0, 0, 128, 64);
@@ -23,7 +53,6 @@ void OLEDMonitor::printInfoToDisplay(String now, float temperature, float humidi
   drawCenteredStr(10 + this->u8g2_monitor->getMaxCharHeight()*3 + 2, heatIndexOutput.c_str());
   this->u8g2_monitor->sendBuffer();
 }
-
 
 void OLEDMonitor::printInfoToDisplay(String date, String time, float temperature, float humidity){
   this->u8g2_monitor->clearBuffer();
@@ -44,9 +73,6 @@ void OLEDMonitor::printInfoToDisplay(String date, String time, float temperature
   this->u8g2_monitor->print(humidity);
   this->u8g2_monitor->sendBuffer();
 }
-
-
-
 
 bool OLEDMonitor::begin(){
   return this->u8g2_monitor->begin();
