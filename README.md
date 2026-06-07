@@ -32,3 +32,12 @@
     * `U8G2` (OLED display handling)
     * `RTClib` by Adafruit (RTC synchronization and reading)
 * **Frontend Dashboard:** Vanilla JavaScript, HTML5, and CSS3.
+
+## Demo 
+### Board 
+![espl_smart_home_board](/documents/espl_smart_home_board.jpg)
+
+### Dashboard web interface 
+![espl_smart_home_web_dashboard](/documents/espl_smart_home_web_dashboard.jpg)
+
+
