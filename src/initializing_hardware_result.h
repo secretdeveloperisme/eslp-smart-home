@@ -10,7 +10,8 @@ enum class ResultStatus {
 enum class HardwareType {
     OLED,
     RTC,
-    TH_SENSOR
+    TH_SENSOR,
+    RELAY_MODULE
 };
 
 class InitializingHardwareResult {

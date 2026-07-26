@@ -134,6 +134,50 @@ void EsplWebServer::setupRoutes()
                         line-height: 1;
                     }
 
+                    .relay-switch {
+                        position: relative;
+                        display: inline-block;
+                        width: 60px;
+                        height: 34px;
+                    }
+                    .relay-switch .slider {
+                        position: absolute;
+                        cursor: pointer;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        background-color: #ccc;
+                        transition: .4s;
+                        border-radius: 34px;
+                    }
+                    .relay-switch .slider:before {
+                        position: absolute;
+                        content: "";
+                        height: 26px;
+                        width: 26px;
+                        left: 4px;
+                        bottom: 4px;
+                        background-color: white;
+                        transition: .4s;
+                        border-radius: 50%;
+                    }
+                    .relay-switch input {
+                        opacity: 0;
+                        width: 0;
+                        height: 0;
+                    }
+                    .relay-switch input:checked + .slider {
+                        background-color: #2196F3;
+                    }
+
+                    .relay-switch input:checked + .slider:before {
+                        transform: translateX(26px);
+                    }
+                    .relay-switch input:focus + .slider {
+                        box-shadow: 0 0 1px #2196F3;
+                    }
+
                     .footer {
                         margin-top: 28px;
                         padding: 16px 20px;
@@ -185,7 +229,7 @@ void EsplWebServer::setupRoutes()
                             </div>
                         </div>
                     </div>
-                    <div class="grid">
+                    <div class="grid mb-24">
                         <div class="card">
                             <div class="card-title">Temperature</div>
                             <div class="card-value" id="temperature">-- °C</div>
@@ -199,6 +243,22 @@ void EsplWebServer::setupRoutes()
                             <div class="card-value" id="heatIndex">-- °C</div>
                         </div>
                     </div>
+                    <div class="grid">
+                        <div class="card">
+                            <div class="card-title">Relay 1</div>
+                            <label class="relay-switch" for="relay1Checkbox">
+                                <input type="checkbox" id="relay1Checkbox">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="card">
+                            <div class="card-title">Relay 2</div>
+                            <label class="relay-switch" for="relay2Checkbox">
+                                <input type="checkbox" id="relay2Checkbox">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
                     <div class="footer" id="footer">Waiting for sensor data...</div>
                 </div>
                 <script>
@@ -209,6 +269,8 @@ void EsplWebServer::setupRoutes()
                     const temperatureEl = document.getElementById('temperature');
                     const humidityEl = document.getElementById('humidity');
                     const heatIndexEl = document.getElementById('heatIndex');
+                    const relay1Checkbox = document.getElementById('relay1Checkbox');
+                    const relay2Checkbox = document.getElementById('relay2Checkbox');
 
                     let updateTimeInterval = 60; // seconds
                     let updateIntervalId = null;
@@ -222,6 +284,13 @@ void EsplWebServer::setupRoutes()
                         if (socket.readyState === WebSocket.OPEN) {
                             clearInterval(updateIntervalId);
                             updateIntervalId = setInterval(requestSensorData, updateTimeInterval * 1000);
+                        }
+                    }
+
+                    function sendRelayStatus(relayNumber, status) {
+                        if (socket.readyState === WebSocket.OPEN) {
+                            const relayStatusArray = new Uint8Array([0x03, relayNumber, status ? 1 : 0]);
+                            socket.send(relayStatusArray);
                         }
                     }
 
@@ -246,17 +315,20 @@ void EsplWebServer::setupRoutes()
 
                     const SensorDataType = {
                         RequestData : 0x01,
-                        SensorResData : 0x02
+                        SensorResData : 0x02,
+                        SetRelayStatusResponse : 0x04,
                     };
 
                     class SensorData {
                         static PAYLOAD_SIZE = 32; // 4 bytes for temperature, 4 for humidity, 4 for heat index, 11 for date, 9 for time
-                        constructor(temperature, humidity, heatIndex, date, time) {
+                        constructor(temperature, humidity, heatIndex, date, time, relay1Status, relay2Status) {
                             this.temperature = temperature;
                             this.humidity = humidity;
                             this.heatIndex = heatIndex;
                             this.date = date;
                             this.time = time;
+                            this.relay1Status = relay1Status;
+                            this.relay2Status = relay2Status;
                         }
 
                         static fromArrayBuffer(arrayBufferView) {
@@ -278,7 +350,9 @@ void EsplWebServer::setupRoutes()
                             }
                             const timeString = timeChars.join('');
                             const dateString = dateChars.join('');
-                            return new SensorData(temperature, humidity, heatIndex, dateString, timeString);
+                            const relay1Status = arrayBufferView.getUint8(offset++);
+                            const relay2Status = arrayBufferView.getUint8(offset++);
+                            return new SensorData(temperature, humidity, heatIndex, dateString, timeString, relay1Status, relay2Status);
                         }
                         
                     }
@@ -292,6 +366,17 @@ void EsplWebServer::setupRoutes()
                         const sensorData = SensorData.fromArrayBuffer(arrayBufferView);
                         updateDashboard(sensorData);
                     };
+                    handleReceivedSetRelayStatusResponse = (arrayBufferView) => {
+                        const payloadLength = arrayBufferView.getUint32(1, true);
+                        if (payloadLength < 2) {
+                            console.error('Invalid payload length for relay status response:', payloadLength);
+                            return;
+                        }
+                        const relay1Status = arrayBufferView.getUint8(5);
+                        const relay2Status = arrayBufferView.getUint8(6);
+                        relay1Checkbox.checked = !!relay1Status;
+                        relay2Checkbox.checked = !!relay2Status;
+                    };
 
                     socket.addEventListener('message', event => {
                         if (!(event.data instanceof ArrayBuffer)) {
@@ -303,6 +388,9 @@ void EsplWebServer::setupRoutes()
                         switch (type) {
                             case SensorDataType.SensorResData:
                                 handleReceivedSensorData(arrayBufferView);
+                                break;
+                            case SensorDataType.SetRelayStatusResponse:
+                                handleReceivedSetRelayStatusResponse(arrayBufferView);
                                 break;
                             default:
                                 console.error('Unknown data type received:', type);
@@ -327,12 +415,24 @@ void EsplWebServer::setupRoutes()
                         temperatureEl.textContent = `${sensorData.temperature.toFixed(1)} °C`;
                         humidityEl.textContent = `${sensorData.humidity.toFixed(1)} %`;
                         heatIndexEl.textContent = `${sensorData.heatIndex.toFixed(1)} °C`;
+                        relay1Checkbox.checked = !!sensorData.relay1Status;
+                        relay2Checkbox.checked = !!sensorData.relay2Status;
                         footerEl.innerHTML = `Last updated: <strong>${new Date().toLocaleTimeString()}</strong>`;
                         statusEl.textContent = 'Connected';
                         statusEl.style.background = 'rgba(17, 91, 198, 0.18)';
                     }
+
+                    function handleRelayChange(event) {
+                        const relayNumber = event.target.id === 'relay1Checkbox' ? 1 : 2;
+                        const status = event.target.checked;
+                        sendRelayStatus(relayNumber, status);
+                    }
+
+                    relay1Checkbox.addEventListener('change', handleRelayChange);
+                    relay2Checkbox.addEventListener('change', handleRelayChange);
                 </script>
             </body>
+
             </html>
         )rawliteral"); });
 }
@@ -363,10 +463,30 @@ void EsplWebServer::setupWebSocket()
 
                         WSTHData wsTHData = thData.toWsTHData();
                         WSDateTimeData wsDateTimeData = dateTimeData.toWsDateTimeData();
-                        struct WSSensorData sensorData = createWSSensorData(wsTHData, wsDateTimeData);
+                        RelayStatusData relayStatusData = this->systemService->getCurrentRelayStatus();
+                        WSRelayData wsRelayData = createWSRelayData(relayStatusData.getRelay1Status(), relayStatusData.getRelay2Status());
 
-                        struct WSMessage responseMessage = createWSMessage(MessageType::SENSOR_DATA_RESPONSE, sensorData);
+                        struct WSSensorData sensorData = createWSSensorData(wsTHData, wsDateTimeData, wsRelayData);
+
+                        struct WSMessage responseMessage = createWSMessage(MessageType::SENSOR_DATA_RESPONSE, (uint8_t*)&sensorData, sizeof(WSSensorData));
                        
+                        convertWSMessageToBuffer(responseMessage, buffer, sizeof(buffer));
+                        client->binary(buffer, calculateWSMessageSize(responseMessage));
+                        break;
+                    }
+                    case MessageType::SET_RELAY_STATUS:{
+                        Serial.printf("Received SET_RELAY_STATUS message from client %u\n", client->id());
+                        // read relay status from payload
+                        uint8_t relayNumber = data[1];
+                        bool relayStatus = (bool)data[2];
+
+                        Serial.printf("Setting relay status: Relay%d=%d\n", relayNumber, relayStatus);
+                        // set relay status
+                        this->systemService->setRelayStatus(relayNumber, relayStatus);
+                        // send response back to client
+                        RelayStatusData relayStatusData = this->systemService->getCurrentRelayStatus();
+                        WSRelayData wsRelayData = createWSRelayData(relayStatusData.getRelay1Status(), relayStatusData.getRelay2Status());
+                        struct WSMessage responseMessage = createWSMessage(MessageType::SET_RELAY_STATUS_RESPONSE, (uint8_t*)&wsRelayData, sizeof(WSRelayData));
                         convertWSMessageToBuffer(responseMessage, buffer, sizeof(buffer));
                         client->binary(buffer, calculateWSMessageSize(responseMessage));
                         break;

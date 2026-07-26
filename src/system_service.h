@@ -7,6 +7,8 @@ public:
     SystemService(HardwareController& hardwareController);
     DateTimeData getCurrentDateTime();
     THData getCurrentTHData();
+    RelayStatusData getCurrentRelayStatus();
+    void setRelayStatus(uint8_t relayNumber, bool relayStatus);
 private:
     HardwareController& hardwareController;
 

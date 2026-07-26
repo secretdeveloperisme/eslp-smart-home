@@ -18,26 +18,35 @@ struct WSDateTimeData createWSDateTimeData(const String& date, const String& tim
     return data;
 }
 
-struct WSSensorData createWSSensorData(WSTHData thData, WSDateTimeData dateTimeData) {
+struct WSSensorData createWSSensorData(WSTHData thData, WSDateTimeData dateTimeData, WSRelayData relayData) {
     WSSensorData data;
     data.thData = thData;
     data.dateTimeData = dateTimeData;
+    data.relayData = relayData;
     return data;
 }
 
-struct WSMessage createWSMessage(MessageType type, WSSensorData sensorData) {
+WSRelayData createWSRelayData(bool relay1Status, bool relay2Status)
+{
+    WSRelayData data;
+    data.relay1Status = relay1Status;
+    data.relay2Status = relay2Status;
+    return data;
+}
+
+struct WSMessage createWSMessage(MessageType type, uint8_t *payload, uint32_t payloadLength) {
     WSMessage message;
     message.type = type;
-    message.payloadLength = sizeof(WSSensorData);
+    message.payloadLength = payloadLength;
 #ifdef DEBUG
-    Serial.printf("Sensor data size: %u bytes\n", sizeof(WSSensorData));
-    for (size_t i = 0; i < sizeof(WSSensorData); i++) {
-        Serial.printf("%02x ", ((uint8_t*)&sensorData)[i]);
+    Serial.printf("Payload size: %u bytes\n", payloadLength);
+    for (size_t i = 0; i < payloadLength; i++) {
+        Serial.printf("%02x ", payload[i]);
     }
 #endif
     Serial.println();  
     message.payload = new uint8_t[message.payloadLength]; 
-    memcpy(message.payload, &sensorData, message.payloadLength);
+    memcpy(message.payload, payload, message.payloadLength);
     return message;
 }
 

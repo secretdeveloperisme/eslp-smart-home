@@ -3,7 +3,7 @@
 #include "hardware_controller.h"
 const uint8_t HardwareController::RETRY_COUNT = 3;
 
-HardwareController::HardwareController() : oled_monitor(), rtc_sensor(), th_sensor(DHT_PIN) {
+HardwareController::HardwareController() : oled_monitor(), rtc_sensor(), th_sensor(DHT_PIN), relay_module(RELAY_PIN_1, RELAY_PIN_2) {
 }
 HardwareController::~HardwareController() {
 }
@@ -55,6 +55,10 @@ InitializingHardwareResult HardwareController::begin(){
             return thSensorResult;
         }
     }
+    retryCount = 0;
+    InitializingHardwareResult relayResult = this->relay_module.begin() ? InitializingHardwareResult
+    (ResultStatus::SUCCESS, "Relay Module initialized successfully", HardwareType::RELAY_MODULE) : InitializingHardwareResult(ResultStatus::FAILURE, "Failed to initialize Relay Module", HardwareType::RELAY_MODULE);
+
     return InitializingHardwareResult(ResultStatus::SUCCESS, "All hardware initialized successfully");
 }
 
@@ -66,5 +70,23 @@ RTCSensor& HardwareController::getRTCSensor() {
 }
 THSensor& HardwareController::getTHSensor() {
     return this->th_sensor;
+}
+RelayModule& HardwareController::getRelayModule() {
+    return this->relay_module;
+}
+void HardwareController::setRelayStatus(uint8_t relayNumber, bool relayStatus) {
+    if (relayNumber == 1) {
+        if (relayStatus && !this->relay_module.isRelay1On()) {
+            this->relay_module.turnOnRelay1();
+        } else if (!relayStatus && this->relay_module.isRelay1On()) {
+            this->relay_module.turnOffRelay1();
+        }
+    } else if (relayNumber == 2) {
+        if (relayStatus && !this->relay_module.isRelay2On()) {
+            this->relay_module.turnOnRelay2();
+        } else if (!relayStatus && this->relay_module.isRelay2On()) {
+            this->relay_module.turnOffRelay2();
+        }
+    }
 }
 #endif // HARDWARE_CONTROLLER_CPP

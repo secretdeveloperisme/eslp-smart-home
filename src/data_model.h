@@ -31,4 +31,14 @@ private:
     String time;
 };
 
+class RelayStatusData {
+    public:
+        RelayStatusData(bool relay1Status, bool relay2Status) : relay1Status(relay1Status), relay2Status(relay2Status) {}
+        bool getRelay1Status() const { return relay1Status; }
+        bool getRelay2Status() const { return relay2Status; }
+    private:
+        bool relay1Status;
+        bool relay2Status;
+};
+
 #endif // DATA_MODEL_H

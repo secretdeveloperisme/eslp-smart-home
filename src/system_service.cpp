@@ -17,5 +17,15 @@ THData SystemService::getCurrentTHData() {
     return THData(temperature, humidity, heatIndex);
 }
 
+RelayStatusData SystemService::getCurrentRelayStatus()
+{
+    return RelayStatusData(hardwareController.getRelayModule().isRelay1On(), hardwareController.getRelayModule().isRelay2On());
+}
+
+void SystemService::setRelayStatus(uint8_t relayNumber, bool relayStatus)
+{
+    hardwareController.setRelayStatus(relayNumber, relayStatus);
+}
+
 #endif // SYSTEM_SERVICE_CPP
 

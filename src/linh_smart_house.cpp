@@ -26,7 +26,7 @@ void setup() {
   Serial.println("\n\n========================================================");
   Serial.println("                      ESLP Smart Home                      ");
   Serial.println("==========================================================\n");
-
+  Serial.println("Starting intitializing hardward");
   // Initialize hardware components
   InitializingHardwareResult hardwareInitResult = hardware_controller.begin();
   if (hardwareInitResult.getStatus() == ResultStatus::FAILURE) {

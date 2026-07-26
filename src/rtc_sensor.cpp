@@ -4,7 +4,15 @@
 #include "rtc_sensor.h"
 
 bool RTCSensor::begin(){
-  return this->rtc->begin();
+  bool rtcStatus =  this->rtc->begin();
+  if(!rtcStatus){
+    #ifdef DEBUG
+    Serial.println("RTC Sensor initialization failed!");
+    #endif
+    return false;
+  }
+  rtc->adjust(DateTime(F(__DATE__), F(__TIME__)));
+  return true;
 }
 
 bool RTCSensor::status() {
