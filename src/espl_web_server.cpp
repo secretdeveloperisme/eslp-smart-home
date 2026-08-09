@@ -467,7 +467,6 @@ void EsplWebServer::setupWebSocket()
                         WSRelayData wsRelayData = createWSRelayData(relayStatusData.getRelay1Status(), relayStatusData.getRelay2Status());
 
                         struct WSSensorData sensorData = createWSSensorData(wsTHData, wsDateTimeData, wsRelayData);
-
                         struct WSMessage responseMessage = createWSMessage(MessageType::SENSOR_DATA_RESPONSE, (uint8_t*)&sensorData, sizeof(WSSensorData));
                        
                         convertWSMessageToBuffer(responseMessage, buffer, sizeof(buffer));
@@ -481,7 +480,7 @@ void EsplWebServer::setupWebSocket()
                         bool relayStatus = (bool)data[2];
 
                         Serial.printf("Setting relay status: Relay%d=%d\n", relayNumber, relayStatus);
-                        // set relay status
+                        // set relay status & update system state
                         this->systemService->setRelayStatus(relayNumber, relayStatus);
                         // send response back to client
                         RelayStatusData relayStatusData = this->systemService->getCurrentRelayStatus();

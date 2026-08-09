@@ -16,6 +16,7 @@ class OLEDMonitor{
     void printIPAddressToDisplay(String ipAddress);
     void printInfoToDisplay(String now, float temperature, float humidity, float heatIndex);
     void printInfoToDisplay(String date, String time, float temperature, float humidity);
+    void printRelayStatusToDisplay(uint8_t relayNumber, bool relayStatus);
     ~OLEDMonitor(){
       delete u8g2_monitor;
     }

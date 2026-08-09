@@ -2,9 +2,20 @@
 #define SYSTEM_SERVICE_CPP
 #include "system_service.h"
 
-SystemService::SystemService(HardwareController& hardwareController) : hardwareController(hardwareController) {
+SystemService::SystemService(HardwareController& hardwareController) : hardwareController(hardwareController), systemState() {
 }
-DateTimeData SystemService::getCurrentDateTime() {
+SystemState& SystemService::getSystemState()
+{
+    return this->systemState;
+}
+
+const SystemState& SystemService::getSystemState() const
+{
+    return this->systemState;
+}
+
+DateTimeData SystemService::getCurrentDateTime()
+{
     String date = hardwareController.getRTCSensor().getDateStr();
     String time = hardwareController.getRTCSensor().getTimeStr();
     return DateTimeData(date, time);
@@ -24,7 +35,14 @@ RelayStatusData SystemService::getCurrentRelayStatus()
 
 void SystemService::setRelayStatus(uint8_t relayNumber, bool relayStatus)
 {
-    hardwareController.setRelayStatus(relayNumber, relayStatus);
+    this->hardwareController.setRelayStatus(relayNumber, relayStatus);
+    this->systemState.setRelayStatus(relayNumber, relayStatus);
+    this->systemState.setScreenState(ScreenState::RELAY_STATUS_SCREEN);
+}
+
+void SystemService::displayRelayStatusToScreen()
+{
+    hardwareController.getOLEDMonitor().printRelayStatusToDisplay(systemState.getRelayStatus().getRelayNumber(), systemState.getRelayStatus().getRelayStatus());
 }
 
 #endif // SYSTEM_SERVICE_CPP

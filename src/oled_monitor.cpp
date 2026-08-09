@@ -3,6 +3,11 @@
 #include "oled_monitor.h"
 #include "icons.h"
 
+bool OLEDMonitor::begin(){
+  return this->u8g2_monitor->begin();
+}
+
+
 void OLEDMonitor::drawCenteredStr(int y, const char *str){
   int stringWidth = this->u8g2_monitor->getStrWidth(str);
   int x = (128 - stringWidth) / 2;
@@ -74,8 +79,16 @@ void OLEDMonitor::printInfoToDisplay(String date, String time, float temperature
   this->u8g2_monitor->sendBuffer();
 }
 
-bool OLEDMonitor::begin(){
-  return this->u8g2_monitor->begin();
+void OLEDMonitor::printRelayStatusToDisplay(uint8_t relayNumber, bool relayStatus)
+{
+  this->u8g2_monitor->clearBuffer();
+  this->u8g2_monitor->setFont(u8g2_font_9x18_tf);
+  this->u8g2_monitor->setCursor(10, 10);
+  this->u8g2_monitor->print("relay(" + String(relayNumber) + "): " + (relayStatus ? "on" : "off"));
+  this->u8g2_monitor->setCursor(20, 56);
+  this->u8g2_monitor->drawBitmap(52, 24, 3, 24, relayStatus ? SWITCH_ON_ICON : SWITCH_OFF_ICON);
+  this->u8g2_monitor->drawLine(20, 22, 108, 22);
+  this->u8g2_monitor->sendBuffer();
 }
 
 #endif
