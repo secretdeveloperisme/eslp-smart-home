@@ -20,6 +20,7 @@
 * **Timekeeping:** DS1307 Real-Time Clock (RTC) Module (with CR2032 backup battery)
 * **Display:** 0.96" SSD1306 OLED Display (128x64 resolution, I2C version)
 * **Actuators:** 2-Channel Relay Module (5V optocoupler-isolated)
+* **Loads:** 2 mini leds to demonstrate example loads
 * **Misc:** Breadboard, Jumper wires, resistors.
 
 
